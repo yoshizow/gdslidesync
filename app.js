@@ -1,15 +1,48 @@
-
 /**
  * Module dependencies.
  */
 
 var express = require('express'),
+    httpProxy = require('http-proxy'),
     parseCookie = require('connect').utils.parseCookie,
     MemoryStore = express.session.MemoryStore,
     sessionStore = new MemoryStore();
     routes = require('./routes');
 
+var UPSTREAM_HOST = 'docs.google.com';
+var UPSTREAM_PORT = 443;
+var UPSTREAM_IS_HTTPS = true;
+
+var prepareInsertScript = function(req, res) {
+  // disable accept-encoding because we can't handle gzip'd stream :-<
+  delete req.headers['accept-encoding'];
+  var write = res.write,
+  end = res.end;
+  var body = '';
+  res.write = function(data) {
+    body += data.toString();
+  }
+  res.end = function(data) {
+    if (data)
+      body += data.toString();
+    body = body.replace(/<script/,
+                        '<script type="text/javascript" src="/_local/javascripts/jquery-1.7.2.min.js"></script>\n' +
+                        '<script type="text/javascript" src="/socket.io/socket.io.js"></script>\n' +
+                        '<script type="text/javascript" src="/_local/javascripts/gdp-client.js"></script>\n' +
+                        '<script');
+    end.call(res, body);
+  }
+};
+
 var app = module.exports = express.createServer();
+
+var proxy = new httpProxy.HttpProxy({
+  target: {
+    host: UPSTREAM_HOST,
+    port: UPSTREAM_PORT,
+    https: UPSTREAM_IS_HTTPS
+  }
+});
 
 // Configuration
 
@@ -40,13 +73,29 @@ app.configure('production', function(){
 
 // index.html
 app.get('/', function(req, res) {
-  res.sendfile('public/html/index.html');
+  res.sendfile('public/_local/html/index.html');
 });
 
 // create session
 app.get('/admin', function(req, res) {
   req.session.admin = true;
   res.redirect('/');
+});
+
+// rest ; proxy to upstream
+app.all('/*', function(req, res, next) {
+    if (req.url.match(/^\/_local\//)) {
+    // delegate handling of proxy-local files to 'static' middleware
+    next();
+    return;
+  }
+  console.log("proxying: " + req.url);
+  // set correct Host header field for upstream
+  req.headers.host = UPSTREAM_HOST + ':' + UPSTREAM_PORT;
+  if (req.url.match(/present$/)) {  // the file we wanted to edit
+    prepareInsertScript(req, res);
+  }
+  proxy.proxyRequest(req, res);
 });
 
 // Socket.IO
@@ -77,7 +126,7 @@ io.on('connection', function(socket) {
     if (!socket.handshake.session.admin) {
       return false;
     }
-    console.log("move");
+    console.log("move: " + data);
     socket.broadcast.emit('move', data);
   });
   socket.on('disconnect', function() {
