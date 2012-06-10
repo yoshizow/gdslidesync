@@ -94,6 +94,11 @@ app.all('/*', function(req, res, next) {
   req.headers.host = UPSTREAM_HOST + ':' + UPSTREAM_PORT;
   if (req.url.match(/present$/)) {  // the file we wanted to edit
     prepareInsertScript(req, res);
+    res.on('header', function() {
+      if (300 <= res.statusCode && res.statusCode < 400) {
+        console.log("warning: redirect detected: this document may not be published to the internet.");
+      }
+    });
   }
   proxy.proxyRequest(req, res);
 });
