@@ -18,8 +18,8 @@
             //console.log("onFinishedLoading");
         },
         onActionEnabledStateChange: function() {
-            var page = statusAPI.getCurrentSlideIndex();
             if (sync) {
+                var page = statusAPI.getCurrentSlideIndex();
                 console.log("move " + page);
                 socket.emit('move', page);
             }
@@ -61,8 +61,13 @@
                     cursor.css('height', '31px');
                     $('body').append(cursor);
                 }
-                cursor.css('left', data[0] + 'px');
-                cursor.css('top', data[1] + 'px');
+                console.dir(data);
+                var content = $('div.punch-viewer-content');
+                var o = content.offset();
+                var x = data.x * content.width() / 1000 + o.left;
+                var y = data.y * content.height() / 1000 + o.top;
+                cursor.css('left', x + 'px');
+                cursor.css('top', y + 'px');
                 cursor.show();
                 clearTimeout(cursorTimer);
                 cursorTimer = setTimeout(function() {
@@ -73,7 +78,11 @@
 
         $(document).on('mousemove', function(e) {
             if (sync) {
-                socket.emit('cursormove', [e.pageX, e.pageY]);
+                var content = $('div.punch-viewer-content');
+                var o = content.offset();
+                var x = (e.pageX - o.left) * 1000 / content.width();
+                var y = (e.pageY - o.top) * 1000 / content.height();
+                socket.emit('cursormove', { x: x, y: y });
             }
         });
     });
