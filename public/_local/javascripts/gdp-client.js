@@ -30,15 +30,22 @@
     };
 
     $(function() {
-        /*
-          var unsyncMessage = "click to unsync slide";
-          var syncMessage = "click to sync slide";
-          $("#syncStatus").text(unsyncMessage);
-          $("#syncStatus").click(function() {
-          sync = !sync;
-          $(this).text(sync ? unsyncMessage : syncMessage);
-          });
-        */
+        var syncMenu = $('<div>');
+        syncMenu.attr('class', 'goog-inline-block goog-flat-menu-button');
+        syncMenu.attr('id', 'syncStatus');
+        syncMenu.text('Sync');
+        $('div.punch-viewer-nav-rounded-container').append(syncMenu);
+
+        var unsyncMessage = "Unsync";
+        var syncMessage = "Sync";
+        $("#syncStatus").text(unsyncMessage);
+        $("#syncStatus").click(function() {
+            sync = !sync;
+            $(this).text(sync ? unsyncMessage : syncMessage);
+            if (!sync) {
+                $('#cursor').hide();
+            }
+        });
 
         // socket.io settings
         socket = io.connect();
@@ -53,7 +60,6 @@
                 var cursor = $('#cursor');
                 if (!cursor.attr('id')) {
                     cursor = $('<img>');
-                    cursor.attr('class', 'cursor');
                     cursor.attr('id', 'cursor');
                     cursor.attr('src', '/_local/images/cursor.svg');
                     cursor.css('position', 'absolute');
@@ -76,7 +82,7 @@
             }
         });
 
-        $(document).on('mousemove', function(e) {
+        $(document).mousemove(function(e) {
             if (sync) {
                 var content = $('div.punch-viewer-content');
                 var o = content.offset();
