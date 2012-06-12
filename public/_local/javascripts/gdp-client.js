@@ -1,11 +1,14 @@
 (function() {
 
     var io = window.io;
+    var $ = window.$;
+
     var socket;
     // sync setting
     var sync = true;
-
     var statusAPI, actionAPI;
+    var cursorTimer;
+
     window.punchWebViewEventListener = {  // callback must be set before loading viewer script
         onApiExported: function(s, a) {
             statusAPI = s;
@@ -15,9 +18,10 @@
             //console.log("onFinishedLoading");
         },
         onActionEnabledStateChange: function() {
-            console.log("move " + statusAPI.getCurrentSlideIndex() + 1);
+            var page = statusAPI.getCurrentSlideIndex();
             if (sync) {
-                socket.emit('move', statusAPI.getCurrentSlideIndex() + 1);
+                console.log("move " + page);
+                socket.emit('move', page);
             }
         },
         onCurrentViewChange: function() {
@@ -42,6 +46,34 @@
             if (sync) {
                 console.log("gotoSlide " + data);
                 actionAPI.gotoSlide(data);
+            }
+        });
+        socket.on('cursormove', function(data) {
+            if (sync) {
+                var cursor = $('#cursor');
+                if (!cursor.attr('id')) {
+                    cursor = $('<img>');
+                    cursor.attr('class', 'cursor');
+                    cursor.attr('id', 'cursor');
+                    cursor.attr('src', '/_local/images/cursor.svg');
+                    cursor.css('position', 'absolute');
+                    cursor.css('width', '20px');
+                    cursor.css('height', '31px');
+                    $('body').append(cursor);
+                }
+                cursor.css('left', data[0] + 'px');
+                cursor.css('top', data[1] + 'px');
+                cursor.show();
+                clearTimeout(cursorTimer);
+                cursorTimer = setTimeout(function() {
+                    cursor.fadeOut(500);
+                }, 4500);
+            }
+        });
+
+        $(document).on('mousemove', function(e) {
+            if (sync) {
+                socket.emit('cursormove', [e.pageX, e.pageY]);
             }
         });
     });
