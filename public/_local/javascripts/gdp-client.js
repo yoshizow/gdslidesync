@@ -63,8 +63,7 @@
                     cursor.attr('id', 'cursor');
                     cursor.attr('src', '/_local/images/cursor.svg');
                     cursor.css('position', 'absolute');
-                    cursor.css('width', '20px');
-                    cursor.css('height', '31px');
+                    cursor.css('width', '2%');
                     $('body').append(cursor);
                 }
                 console.dir(data);
