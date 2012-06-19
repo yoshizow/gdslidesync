@@ -18,14 +18,18 @@
             //console.log("onFinishedLoading");
         },
         onActionEnabledStateChange: function() {
+            //This does not work for some contents
+            //console.log("onActionEnabledStateChange");
+        },
+        onCurrentViewChange: function() {
+            //console.log("onCurrentViewChange");
+        },
+        onNavigation: function() {
             if (sync) {
                 var page = statusAPI.getCurrentSlideIndex();
                 console.log("move " + page);
                 socket.emit('move', page);
             }
-        },
-        onCurrentViewChange: function() {
-            //console.log("onCurrentViewChange");
         },
     };
 
@@ -66,7 +70,6 @@
                     cursor.css('width', '2%');
                     $('body').append(cursor);
                 }
-                console.dir(data);
                 var content = $('div.punch-viewer-content');
                 var o = content.offset();
                 var x = data.x * content.width() / 1000 + o.left;
