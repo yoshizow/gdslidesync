@@ -4,7 +4,7 @@
 
 var express = require('express'),
     httpProxy = require('http-proxy'),
-    parseCookie = require('connect').utils.parseCookie,
+    parseCookie = require('cookie').parse,
     MemoryStore = express.session.MemoryStore,
     sessionStore = new MemoryStore();
     routes = require('./routes');
