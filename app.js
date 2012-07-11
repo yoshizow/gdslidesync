@@ -28,8 +28,12 @@ var prepareInsertScript = function(req, res) {
     body = body.replace(/<script/,
                         '<script type="text/javascript" src="/_local/javascripts/jquery-1.7.2.min.js"></script>\n' +
                         '<script type="text/javascript" src="/socket.io/socket.io.js"></script>\n' +
+                        '<script type="text/javascript" src="/_local/javascripts/pointersync_client.js"></script>\n' +
                         '<script type="text/javascript" src="/_local/javascripts/gdp-client.js"></script>\n' +
                         '<script');
+    body = body.replace(/<\/body>/,
+                       '<img id="pointersync-cursor" src="/_local/images/cursor.svg" width="2%" style="position: absolute; z-index: 99; display: none;">\n' +
+                       '</body>');
     end.call(res, body);
   }
 };

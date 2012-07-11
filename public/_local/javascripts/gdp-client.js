@@ -6,6 +6,7 @@
     var socket;
     // sync setting
     var sync = true;
+    var pointerSync;
     var statusAPI, actionAPI;
     var cursorTimer;
 
@@ -45,6 +46,7 @@
         $("#syncStatus").text(unsyncMessage);
         $("#syncStatus").click(function() {
             sync = !sync;
+            pointerSync.setSync(sync);
             $(this).text(sync ? unsyncMessage : syncMessage);
             if (!sync) {
                 $('#cursor').hide();
@@ -59,40 +61,19 @@
                 actionAPI.gotoSlide(data);
             }
         });
-        socket.on('cursormove', function(data) {
-            if (sync) {
-                var cursor = $('#cursor');
-                if (!cursor.attr('id')) {
-                    cursor = $('<img>');
-                    cursor.attr('id', 'cursor');
-                    cursor.attr('src', '/_local/images/cursor.svg');
-                    cursor.css('position', 'absolute');
-                    cursor.css('width', '2%');
-                    $('body').append(cursor);
-                }
-                var content = $('div.punch-viewer-content');
-                var o = content.offset();
-                var x = data.x * content.width() / 1000 + o.left;
-                var y = data.y * content.height() / 1000 + o.top;
-                cursor.css('left', x + 'px');
-                cursor.css('top', y + 'px');
-                cursor.show();
-                clearTimeout(cursorTimer);
-                cursorTimer = setTimeout(function() {
-                    cursor.fadeOut(500);
-                }, 4500);
-            }
-        });
 
-        $(document).mousemove(function(e) {
-            if (sync) {
+        // pointer sync
+        pointerSync = new PointerSync({
+            socket: socket,
+            cursorId: '#pointersync-cursor',
+            getContentRectFn: function(isSend) {
                 var content = $('div.punch-viewer-content');
-                var o = content.offset();
-                var x = (e.pageX - o.left) * 1000 / content.width();
-                var y = (e.pageY - o.top) * 1000 / content.height();
-                socket.emit('cursormove', { x: x, y: y });
+                return { offset: content.offset(),
+                         width: content.width(),
+                         height: content.height() };
             }
         });
+        $(document).mousemove(function(e) { pointerSync.onMouseMove(e); });
+
     });
-  
 })();
