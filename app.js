@@ -1,3 +1,5 @@
+// -*- js-indent-level:2 -*-
+
 /**
  * Module dependencies.
  */
@@ -6,7 +8,7 @@ var express = require('express'),
     httpProxy = require('http-proxy'),
     parseCookie = require('cookie').parse,
     MemoryStore = express.session.MemoryStore,
-    sessionStore = new MemoryStore();
+    sessionStore = new MemoryStore(),
     routes = require('./routes');
 
 var UPSTREAM_HOST = 'docs.google.com';
@@ -52,7 +54,7 @@ var proxy = new httpProxy.HttpProxy({
 
 app.configure(function(){
   app.set('views', __dirname + '/views');
-  app.set('view engine', 'jade');
+  app.set('view engine', 'ejs');
   app.use(express.bodyParser());
   app.use(express.methodOverride());
   // use session
@@ -73,11 +75,144 @@ app.configure('production', function(){
   app.use(express.errorHandler());
 });
 
+// Models
+
+var RoomList = function() {
+  this.initialize.apply(this, arguments);
+};
+
+RoomList.prototype = {
+  initialize: function() {
+    this.list = [];
+  },
+
+  getAllRooms: function() {
+    return this.list.filter(function(e) { return true; });
+  },
+
+  getRoomById: function(id) {
+    return this.list[id];
+  },
+
+  addRoom: function(url, passCode) {
+    var room = this._getRoomByValues(url, passCode);
+    if (room) {
+      return room;
+    } else {
+      var id = this._unusedId();
+      room = new Room(id, url, passCode);
+      this.list[id] = room;
+      return room;
+    }
+  },
+
+  _getRoomByValues: function(url, passCode) {
+    var found = null;
+    this.list.some(function (room) {
+      if (room.url == url && room.passCode == passCode) {
+        found = room;
+        return true;
+      }
+    });
+    return found;
+  },
+
+  _unusedId: function() {
+    for (var i = 1; ; i++) {
+      if (!(i in this.list)) {
+        return i;
+      }
+    }
+    throw new Error();
+  }
+};
+
+var Room = function() {
+  this.initialize.apply(this, arguments);
+};
+
+Room.prototype = {
+  initialize: function(id, url, passCode) {
+    this.id = id;
+    this.url = url;
+    this.passCode = passCode;
+  }
+};
+
+var roomList = new RoomList();
+
+// Helpers
+
+var error = function(res, message) {
+  res.render('message', { title: 'Error', message: message });
+};
+
+var isPresenterOfRoom = function(session, room) {
+  if (session.passCode == room.passCode) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
 // Routes
 
 // index.html
 app.get('/', function(req, res) {
-  res.sendfile('public/_local/html/index.html');
+  var title = 'gdslidesync';
+  var rooms = roomList.getAllRooms();
+  var roomsForView = rooms.map(function(room) {
+    return { id: room.id, title: "Room" + room.id };
+  });
+  res.render('index', { title: title,
+                        rooms: roomsForView });
+});
+
+app.all('/rooms/:id/join', function(req, res) {
+  var id = Number(req.params.id);
+  var room = roomList.getRoomById(id);
+  if (!room) {
+    error(res, 'No such room.');
+    return;
+  }
+  req.session.roomId = id;
+  res.redirect(room.url);
+});
+
+app.all('/rooms/:id', function(req, res) {
+  if (req.body.passCode) {
+    req.session.passCode = req.body.passCode;
+  }
+  var id = Number(req.params.id);
+  var title = "Room" + id;
+  var room = roomList.getRoomById(id);
+  if (!room) {
+    error(res, 'No such room.');
+    return;
+  }
+  var isPresenter = isPresenterOfRoom(req.session, room);
+  var guestUrl = '/room/' + id;   // TODO: absolute URL
+  res.render('room', { id: id,
+                       title: title,
+                       isPresenter: isPresenter,
+                       guestUrl: guestUrl });
+});
+
+app.post('/register', function(req, res) {
+  console.dir(req.body);
+  var url = req.body.url;
+  var passCode = req.body.passCode;
+  if (!url || !passCode) {
+    error(res, 'URL or pass code is not specified.');
+    return;
+  }
+  if (url.search(/^https?:\/\//) == -1) {
+    error(res, 'Invalid URL.');
+    return;
+  }
+  var room = roomList.addRoom(url, passCode);
+  req.session.passCode = passCode;
+  res.redirect('/rooms/' + room.id);
 });
 
 // create session

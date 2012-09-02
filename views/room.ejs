@@ -1,0 +1,27 @@
+<h1><%= title %></h1>
+
+<p>You are <%= isPresenter ? "presenter" : "guest" %>.</p>
+
+<% if (isPresenter) { %>
+<p>Guest URL:<br>
+<code><a href="<%= guestUrl %>"><%= guestUrl %></a></code></p>
+<% } %>
+
+<% var actionTitle = isPresenter ? "Start session" : "Join to session"; %>
+
+<h3><%= actionTitle %></h3>
+
+<p><a href="/rooms/<%= id %>/join"><%= actionTitle %></a></p>
+
+<% if (!isPresenter) { %>
+<div style="font-size: 80%;">
+<h3>Login as presenter</h3>
+
+<p>
+<form method="POST" action="/rooms/<%= id %>">
+<label>Passcode<input name="passCode" type="text" size="8"></label>
+<input type="submit" value="Submit">
+</form>
+</p>
+</div>
+<% } %>

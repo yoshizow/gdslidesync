@@ -1,0 +1,24 @@
+<h1>Synchronize Google Docs Presentation</h1>
+
+<h3>Ongoing sessions</h3>
+
+<ul>
+<% rooms.forEach(function(e) { %>
+  <li><a href="/rooms/<%= e.id %>"><%= e.title %></a>
+<% }); %>
+</ul>
+
+<h3>Start new session</h3>
+
+<p>
+<form method="POST" action="/register">
+<label>URL<input name="url" type="text" size="40"></label>
+<label>Passcode<input name="passCode" type="text" size="8"></label>
+<input type="submit" value="Submit">
+</form>
+</p>
+
+<p>&nbsp;</p>
+
+<p>&copy; 2012 yoshizow<br>
+Derived from Sync deck.js &copy; 2012 <a target="_blank" href="https://twitter.com/#!/ma2ge">@ma2ge</a></p>
