@@ -191,7 +191,7 @@ app.all('/rooms/:id', function(req, res) {
     return;
   }
   var isPresenter = isPresenterOfRoom(req.session, room);
-  var guestUrl = '/room/' + id;   // TODO: absolute URL
+  var guestUrl = '/rooms/' + id;   // TODO: absolute URL
   res.render('room', { id: id,
                        title: title,
                        isPresenter: isPresenter,
@@ -199,7 +199,6 @@ app.all('/rooms/:id', function(req, res) {
 });
 
 app.post('/register', function(req, res) {
-  console.dir(req.body);
   var url = req.body.url;
   var passCode = req.body.passCode;
   if (!url || !passCode) {
@@ -262,26 +261,32 @@ io.set('authorization', function(handshakeData, callback) {
   }
 });
 io.on('connection', function(socket) {
+  if (!socket.handshake.session)
+    return;
+  var roomId = socket.handshake.session.roomId;
+  if (!roomId)
+    return;
+  var room = roomList.getRoomById(roomId);
+  if (!room)
+    return;
+  var roomName = 'room' + roomId;
+  socket.join(roomName);
+
   socket.on('move', function(data) {
-    console.log(socket.handshake.session);
-    if (!socket.handshake.session) {
+    if (!room)
       return false;
-    }
-    if (!socket.handshake.session.admin) {
+    if (!isPresenterOfRoom(socket.handshake.session, room))
       return false;
-    }
     console.log("move: " + data);
-    socket.broadcast.emit('move', data);
+    io.sockets.in(roomName).emit('move', data);
   });
   socket.on('cursormove', function(data) {
-    if (!socket.handshake.session) {
+    if (!room)
       return false;
-    }
-    if (!socket.handshake.session.admin) {
+    if (!isPresenterOfRoom(socket.handshake.session, room))
       return false;
-    }
     //console.log("cursormove: " + data);
-    socket.broadcast.emit('cursormove', data);
+    io.sockets.in(roomName).emit('cursormove', data);
   });
   socket.on('disconnect', function() {
     // do nothing
