@@ -278,7 +278,7 @@ io.on('connection', function(socket) {
     if (!isPresenterOfRoom(socket.handshake.session, room))
       return false;
     console.log("move: " + data);
-    io.sockets.in(roomName).emit('move', data);
+    socket.broadcast.to(roomName).emit('move', data);
   });
   socket.on('cursormove', function(data) {
     if (!room)
@@ -286,7 +286,7 @@ io.on('connection', function(socket) {
     if (!isPresenterOfRoom(socket.handshake.session, room))
       return false;
     //console.log("cursormove: " + data);
-    io.sockets.in(roomName).emit('cursormove', data);
+    socket.broadcast.to(roomName).emit('cursormove', data);
   });
   socket.on('disconnect', function() {
     // do nothing
