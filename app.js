@@ -52,6 +52,13 @@ var RoomList = model.RoomList,
 
 // Helpers
 
+var trim = function(str) {
+  if (str)
+    return str.trim();
+  else
+    return null;
+}
+
 var error = function(res, message) {
   res.render('message', { title: 'Error', message: message });
 };
@@ -108,17 +115,18 @@ app.all('/rooms/:id', function(req, res) {
 });
 
 app.post('/register', function(req, res) {
-  var url = req.body.url;
-  var passCode = req.body.passCode;
+  var url = trim(req.body.url);
+  var passCode = trim(req.body.passCode);
   if (!url || !passCode) {
     error(res, 'URL or pass code is not specified.');
     return;
   }
-  if (url.search(/^https?:\/\//) == -1) {
+  var ret = gdpAdapter.validateURL(url);
+  if (!ret.isValid) {
     error(res, 'Invalid URL.');
     return;
   }
-  var room = roomList.addRoom(url, passCode);
+  var room = roomList.addRoom(ret.url, passCode);
   req.session.passCode = passCode;
   res.redirect('/rooms/' + room.id);
 });
