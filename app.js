@@ -131,12 +131,6 @@ app.post('/register', function(req, res) {
   res.redirect('/rooms/' + room.id);
 });
 
-// create session
-app.get('/admin', function(req, res) {
-  req.session.admin = true;
-  res.redirect('/');
-});
-
 // rest ; proxy to upstream
 app.all('/*', function(req, res, next) {
     if (req.url.match(/^\/_local\//)) {
