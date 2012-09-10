@@ -85,7 +85,7 @@ app.get('/', function(req, res) {
 });
 
 app.all('/rooms/:id/join', function(req, res) {
-  var id = Number(req.params.id);
+  var id = req.params.id;
   var room = roomList.getRoomById(id);
   if (!room) {
     error(res, 'No such room.');
@@ -99,7 +99,7 @@ app.all('/rooms/:id', function(req, res) {
   if (req.body.passCode) {
     req.session.passCode = req.body.passCode;
   }
-  var id = Number(req.params.id);
+  var id = req.params.id;
   var title = "Room" + id;
   var room = roomList.getRoomById(id);
   if (!room) {
