@@ -47,8 +47,12 @@ app.configure('production', function(){
 
 // Models
 
+var ROOMSWEEP_TIMEOUTSEC = 3 * 60 * 60;
+
 var RoomList = model.RoomList,
-    roomList = new RoomList();
+    RoomSweeper = model.RoomSweeper,
+    roomList = new RoomList(),
+    roomSweeper = new RoomSweeper(roomList, ROOMSWEEP_TIMEOUTSEC);
 
 // Helpers
 
@@ -73,7 +77,12 @@ var isPresenterOfRoom = function(session, room) {
 
 // Routes
 
-// index.html
+app.all('*', function(req, res, next) {
+  // check expiry of rooms on every request
+  roomSweeper.sweep();
+  next();
+});
+
 app.get('/', function(req, res) {
   var title = 'gdslidesync';
   var rooms = roomList.getAllRooms();
@@ -127,6 +136,7 @@ app.post('/register', function(req, res) {
     return;
   }
   var room = roomList.addRoom(ret.url, passCode);
+  roomSweeper.addRoom(room);
   req.session.passCode = passCode;
   res.redirect('/rooms/' + room.id);
 });
@@ -170,27 +180,27 @@ io.on('connection', function(socket) {
   var room = roomList.getRoomById(roomId);
   if (!room)
     return;
+  var isPresenter = isPresenterOfRoom(socket.handshake.session, room);
   var roomName = 'room' + roomId;
   socket.join(roomName);
+  if (isPresenter)
+    roomSweeper.enterPresenter(room);
 
   socket.on('move', function(data) {
-    if (!room)
-      return false;
-    if (!isPresenterOfRoom(socket.handshake.session, room))
+    if (!isPresenter)
       return false;
     console.log("move: " + data);
     socket.broadcast.to(roomName).emit('move', data);
   });
   socket.on('cursormove', function(data) {
-    if (!room)
-      return false;
-    if (!isPresenterOfRoom(socket.handshake.session, room))
+    if (!isPresenter)
       return false;
     //console.log("cursormove: " + data);
     socket.broadcast.to(roomName).emit('cursormove', data);
   });
   socket.on('disconnect', function() {
-    // do nothing
+    if (isPresenter)
+      roomSweeper.leavePresenter(room);
   });
 });
 
