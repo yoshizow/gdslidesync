@@ -84,6 +84,7 @@ app.all('*', function(req, res, next) {
 });
 
 app.get('/', function(req, res) {
+  console.dir(req);
   var title = 'gdslidesync';
   var rooms = roomList.getAllRooms();
   var roomsForView = rooms.map(function(room) {
@@ -116,7 +117,9 @@ app.all('/rooms/:id', function(req, res) {
     return;
   }
   var isPresenter = isPresenterOfRoom(req.session, room);
-  var guestUrl = '/rooms/' + id;   // TODO: absolute URL
+  var guestUrl = '/rooms/' + id;
+  if (req.headers.host)
+    guestUrl = 'http://' + req.headers.host + guestUrl;
   res.render('room', { id: id,
                        title: title,
                        isPresenter: isPresenter,
