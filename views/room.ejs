@@ -2,16 +2,16 @@
 
 <p>You are <%= isPresenter ? "presenter" : "guest" %>.</p>
 
-<% if (isPresenter) { %>
-<p>Guest URL:<br>
-<code><a href="<%= guestUrl %>"><%= guestUrl %></a></code></p>
-<% } %>
-
 <% var actionTitle = isPresenter ? "Start session" : "Join to session"; %>
 
 <h3><%= actionTitle %></h3>
 
 <p><a href="/rooms/<%= id %>/join"><%= actionTitle %></a></p>
+
+<% if (isPresenter) { %>
+<p>Guest URL:<br>
+<code><a href="<%= guestUrl %>"><%= guestUrl %></a></code></p>
+<% } %>
 
 <% if (!isPresenter) { %>
 <div style="font-size: 80%;">
