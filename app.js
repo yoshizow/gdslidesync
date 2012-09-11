@@ -84,7 +84,6 @@ app.all('*', function(req, res, next) {
 });
 
 app.get('/', function(req, res) {
-  console.dir(req);
   var title = 'gdslidesync';
   var rooms = roomList.getAllRooms();
   var roomsForView = rooms.map(function(room) {
@@ -157,6 +156,10 @@ app.all('/*', function(req, res, next) {
 
 // Socket.IO
 var io = require('socket.io').listen(app);
+io.configure('production', function() {
+  io.set('log level', 1);
+});
+
 // set express session to socket
 io.set('authorization', function(handshakeData, callback) {
   if (handshakeData.headers.cookie) {
