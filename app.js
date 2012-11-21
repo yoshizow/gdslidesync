@@ -87,7 +87,7 @@ app.get('/', function(req, res) {
   var title = 'gdslidesync';
   var rooms = roomList.getAllRooms();
   var roomsForView = rooms.map(function(room) {
-    return { id: room.id, title: "Room" + room.id };
+    return { id: room.id, title: "Room-" + room.id };
   });
   res.render('index', { title: title,
                         rooms: roomsForView });
@@ -109,7 +109,7 @@ app.all('/rooms/:id', function(req, res) {
     req.session.passCode = req.body.passCode;
   }
   var id = req.params.id;
-  var title = "Room" + id;
+  var title = "Room-" + id;
   var room = roomList.getRoomById(id);
   if (!room) {
     error(res, 'No such room.');
