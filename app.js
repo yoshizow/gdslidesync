@@ -13,6 +13,7 @@ var express = require('express'),
     parseCookie = require('cookie').parse,
     MemoryStore = express.session.MemoryStore,
     sessionStore = new MemoryStore(),
+    URL = require('url'),
     routes = require('./routes');
 
 var model = require('./lib/model'),
@@ -87,7 +88,7 @@ app.get('/', function(req, res) {
   var title = 'gdslidesync';
   var rooms = roomList.getAllRooms();
   var roomsForView = rooms.map(function(room) {
-    return { id: room.id, title: "Room-" + room.id };
+    return { id: room.id, title: room.title };
   });
   res.render('index', { title: title,
                         rooms: roomsForView });
@@ -109,7 +110,6 @@ app.all('/rooms/:id', function(req, res) {
     req.session.passCode = req.body.passCode;
   }
   var id = req.params.id;
-  var title = "Room-" + id;
   var room = roomList.getRoomById(id);
   if (!room) {
     error(res, 'No such room.');
@@ -120,7 +120,7 @@ app.all('/rooms/:id', function(req, res) {
   if (req.headers.host)
     guestUrl = 'http://' + req.headers.host + guestUrl;
   res.render('room', { id: id,
-                       title: title,
+                       title: "Presentation: " + room.title,
                        isPresenter: isPresenter,
                        guestUrl: guestUrl });
 });
@@ -137,10 +137,21 @@ app.post('/register', function(req, res) {
     error(res, 'Invalid URL.');
     return;
   }
-  var room = roomList.addRoom(ret.url, passCode);
-  roomSweeper.addRoom(room);
-  req.session.passCode = passCode;
-  res.redirect('/rooms/' + room.id);
+  url = ret.url;
+  gdpAdapter.getTitle(URL.parse(url).path, function(err, title) {
+    if (err) {
+      if (err.toString().match(/bad response/i)) {
+        error(res, err.toString() + " -- please make sure your document has the permission to 'Everyone who know the link'. / あなたのドキュメントの共有設定が「リンクを知っている全員」になっているか確認してください。");
+      } else {
+        error(res, err.toString());
+      }
+    } else {
+      var room = roomList.addRoom(url, passCode, title);
+      roomSweeper.addRoom(room);
+      req.session.passCode = passCode;
+      res.redirect('/rooms/' + room.id);
+    }
+  });
 });
 
 // rest ; proxy to upstream
