@@ -48,7 +48,7 @@ app.configure('production', function(){
 
 // Models
 
-var ROOMSWEEP_TIMEOUTSEC = 3 * 60 * 60;
+var ROOMSWEEP_TIMEOUTSEC = 24 * 60 * 60;
 
 var RoomList = model.RoomList,
     RoomSweeper = model.RoomSweeper,
