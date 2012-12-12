@@ -106,17 +106,21 @@ app.all('/rooms/:id/join', function(req, res) {
 });
 
 app.all('/rooms/:id', function(req, res) {
-  if (req.body.passCode) {
-    req.session.passCode = req.body.passCode;
-  }
   var id = req.params.id;
   var room = roomList.getRoomById(id);
   if (!room) {
     error(res, 'No such room.');
     return;
   }
+  if (req.query.guest == 'true') {
+    res.redirect('/rooms/' + room.id + '/join');
+    return;
+  }
+  if (req.body.passCode) {
+    req.session.passCode = req.body.passCode;
+  }
   var isPresenter = isPresenterOfRoom(req.session, room);
-  var guestUrl = '/rooms/' + id;
+  var guestUrl = '/rooms/' + id + '?guest=true';
   if (req.headers.host)
     guestUrl = 'http://' + req.headers.host + guestUrl;
   res.render('room', { id: id,
